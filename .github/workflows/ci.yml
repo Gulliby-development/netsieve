@@ -1,0 +1,26 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: sbt
+      # sbt 2.0.11 is chosen by project/build.properties; the action installs the launcher
+      - uses: sbt/setup-sbt@v1
+      # --server runs the commands in this JVM and leaves no background server; testFull always runs the tests
+      # (sbt 2 caches the result of `test`). bash keeps the step portable across the three runners.
+      - name: Format
+        shell: bash
+        run: sbt --server -batch scalafmtCheckAll
+      - name: Test
+        shell: bash
+        run: sbt --server -batch testFull
